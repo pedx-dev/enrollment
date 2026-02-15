@@ -1,4 +1,65 @@
 <?php
+// API endpoint for AJAX requests
+if (isset($_GET['action']) || (isset($_POST['action']) && $_SERVER['REQUEST_METHOD'] === 'POST')) {
+    header('Content-Type: application/json');
+    $action = $_GET['action'] ?? $_POST['action'];
+    
+    switch ($action) {
+        case 'list':
+            $courses = getAllCourses();
+            echo json_encode(['success' => true, 'data' => $courses]);
+            exit;
+            
+        case 'get':
+            $course = getCourseById($_GET['id']);
+            if ($course) {
+                echo json_encode(['success' => true, 'data' => $course]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Course not found']);
+            }
+            exit;
+            
+        case 'add_course':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = [
+                    'code' => $_POST['code'],
+                    'name' => $_POST['name'],
+                    'department' => $_POST['department'],
+                    'credits' => $_POST['credits'],
+                    'description' => $_POST['description'] ?? '',
+                    'instructor_id' => !empty($_POST['instructor_id']) ? $_POST['instructor_id'] : null
+                ];
+                $result = addCourse($data);
+                echo json_encode(['success' => $result, 'message' => $result ? 'Course added successfully' : 'Failed to add course']);
+            }
+            exit;
+            
+        case 'update_course':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $id = $_POST['id'];
+                $data = [
+                    'code' => $_POST['code'],
+                    'name' => $_POST['name'],
+                    'department' => $_POST['department'],
+                    'credits' => $_POST['credits'],
+                    'description' => $_POST['description'] ?? '',
+                    'instructor_id' => !empty($_POST['instructor_id']) ? $_POST['instructor_id'] : null,
+                    'status' => $_POST['status'] ?? 'active'
+                ];
+                $result = updateCourse($id, $data);
+                echo json_encode(['success' => $result, 'message' => $result ? 'Course updated successfully' : 'Failed to update course']);
+            }
+            exit;
+            
+        case 'delete_course':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $result = deleteCourse($_POST['id']);
+                echo json_encode(['success' => $result, 'message' => $result ? 'Course deleted successfully' : 'Failed to delete course']);
+            }
+            exit;
+    }
+}
+
 // Get courses from database
 $courses = getAllCourses();
 $teachers = getAllTeachers();
@@ -14,7 +75,7 @@ $teachers = getAllTeachers();
                     <h2 class="card-title text-2xl font-bold text-gray-800">Course Management</h2>
                     <p class="text-gray-600 text-sm mt-2">View and manage available courses</p>
                 </div>
-                <button class="btn btn-primary" id="addCourseBtn" onclick="document.getElementById('courseModal').showModal()">
+                <button class="btn btn-primary" id="addCourseBtn" onclick="openAddCourseModal()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -62,7 +123,7 @@ $teachers = getAllTeachers();
         
         <h3 class="font-bold text-lg mb-4" id="courseModalTitle">Add New Course</h3>
 
-        <form id="courseForm" class="space-y-4" method="POST" action="?page=courses">
+        <form id="courseForm" class="space-y-4">
             <input type="hidden" name="action" value="add_course" />
             
             <div class="form-control">
@@ -126,8 +187,83 @@ $teachers = getAllTeachers();
 </dialog>
 
 <script>
+    let currentCourseId = null;
+    let allCourses = <?php echo json_encode($courses); ?>;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('courseForm').addEventListener('submit', saveCourse);
+    });
+
+    function openAddCourseModal() {
+        currentCourseId = null;
+        document.getElementById('courseModalTitle').textContent = 'Add New Course';
+        document.getElementById('courseForm').reset();
+        document.querySelector('#courseForm input[name="action"]').value = 'add_course';
+        document.getElementById('courseModal').showModal();
+    }
+
     function editCourse(courseId) {
-        Swal.fire('Info', 'Edit functionality coming soon', 'info');
+        fetch(`?page=courses&action=get&id=${courseId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const course = data.data;
+                    currentCourseId = course.id;
+                    
+                    document.getElementById('courseModalTitle').textContent = 'Edit Course';
+                    document.getElementById('courseCode').value = course.code;
+                    document.getElementById('courseName').value = course.name;
+                    document.getElementById('courseDepartment').value = course.department;
+                    document.getElementById('courseCredits').value = course.credits;
+                    document.getElementById('courseDescription').value = course.description || '';
+                    document.getElementById('courseInstructor').value = course.instructor_id || '';
+                    document.querySelector('#courseForm input[name="action"]').value = 'update_course';
+                    
+                    document.getElementById('courseModal').showModal();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to load course', 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error', 'Failed to load course data', 'error');
+            });
+    }
+
+    function saveCourse(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        const action = document.querySelector('#courseForm input[name="action"]').value;
+        formData.append('action', action);
+        
+        if (currentCourseId) {
+            formData.append('id', currentCourseId);
+        }
+        
+        formData.append('code', document.getElementById('courseCode').value);
+        formData.append('name', document.getElementById('courseName').value);
+        formData.append('department', document.getElementById('courseDepartment').value);
+        formData.append('credits', document.getElementById('courseCredits').value);
+        formData.append('description', document.getElementById('courseDescription').value);
+        formData.append('instructor_id', document.getElementById('courseInstructor').value);
+        
+        fetch('?page=courses', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire('Success', data.message, 'success').then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Error', data.message || 'Operation failed', 'error');
+            }
+        })
+        .catch(error => {
+            Swal.fire('Error', 'An error occurred', 'error');
+        });
     }
 
     function deleteCourse(courseId) {
@@ -141,8 +277,27 @@ $teachers = getAllTeachers();
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                // For now, show success message
-                Swal.fire('Info', 'Delete functionality coming soon', 'info');
+                const formData = new FormData();
+                formData.append('action', 'delete_course');
+                formData.append('id', courseId);
+                
+                fetch('?page=courses', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Deleted!', data.message, 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'Failed to delete course', 'error');
+                    }
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'An error occurred', 'error');
+                });
             }
         });
     }

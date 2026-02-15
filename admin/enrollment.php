@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../includes/sections.php';
+
 // Get settings for student ID generation
 $settings = getSettings();
 $collegeCode = $settings['college_code'];
@@ -179,49 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <label class="label">
                         <span class="label-text font-semibold">Place of Birth</span>
                     </label>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <!-- Region -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Region</span>
-                            </label>
-                            <select name="pobRegion" id="pobRegion" class="select select-bordered select-sm" required onchange="loadProvinces()">
-                                <option value="">Select Region</option>
-                            </select>
-                        </div>
-
-                        <!-- Province -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Province</span>
-                            </label>
-                            <select name="pobProvince" id="pobProvince" class="select select-bordered select-sm" required onchange="loadCities()" disabled>
-                                <option value="">Select Province</option>
-                            </select>
-                        </div>
-
-                        <!-- City/Municipality -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">City/Municipality</span>
-                            </label>
-                            <select name="pobCity" id="pobCity" class="select select-bordered select-sm" required onchange="loadBarangays()" disabled>
-                                <option value="">Select City/Municipality</option>
-                            </select>
-                        </div>
-
-                        <!-- Barangay -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Barangay</span>
-                            </label>
-                            <select name="pobBarangay" id="pobBarangay" class="select select-bordered select-sm" required disabled>
-                                <option value="">Select Barangay</option>
-                            </select>
-                        </div>
+                    <div class="form-control">
+                        <input type="text" name="placeOfBirth" id="placeOfBirth" placeholder="Enter full place of birth (e.g., Brgy. San Jose, City of San Fernando, Pampanga)" class="input input-bordered" required />
                     </div>
-                    <!-- Hidden field to store combined place of birth -->
-                    <input type="hidden" name="placeOfBirth" id="placeOfBirth" />
                 </div>
 
                 <!-- Sex and Status -->
@@ -265,7 +227,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <label class="label">
                             <span class="label-text font-semibold">Religion</span>
                         </label>
-                        <input type="text" name="religion" placeholder="e.g., Roman Catholic" class="input input-bordered" />
+                        <select name="religion" id="religion" class="select select-bordered" required>
+                            <option value="">Select religion</option>
+                            <option value="Roman Catholic">Roman Catholic</option>
+                            <option value="Iglesia ni Cristo">Iglesia ni Cristo</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Protestant">Protestant</option>
+                            <option value="Evangelical">Evangelical</option>
+                            <option value="Baptist">Baptist</option>
+                            <option value="Seventh-day Adventist">Seventh-day Adventist</option>
+                            <option value="Jehovah's Witnesses">Jehovah's Witnesses</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <input type="text" name="religionOther" id="religionOther" class="input input-bordered mt-2 hidden" placeholder="If Other, please specify" />
                     </div>
                 </div>
             </div>
@@ -281,71 +255,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     Contact Information
                 </h3>
 
-                <!-- Complete Address - Cascading Dropdowns -->
+                <!-- Complete Address - Single Textbox -->
                 <div class="mb-6">
                     <label class="label">
                         <span class="label-text font-semibold">Complete Address</span>
                     </label>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <!-- Region -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Region</span>
-                            </label>
-                            <select name="addrRegion" id="addrRegion" class="select select-bordered select-sm" required onchange="loadAddrProvinces()">
-                                <option value="">Select Region</option>
-                            </select>
-                        </div>
-
-                        <!-- Province -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Province</span>
-                            </label>
-                            <select name="addrProvince" id="addrProvince" class="select select-bordered select-sm" required onchange="loadAddrCities()" disabled>
-                                <option value="">Select Province</option>
-                            </select>
-                        </div>
-
-                        <!-- City/Municipality -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">City/Municipality</span>
-                            </label>
-                            <select name="addrCity" id="addrCity" class="select select-bordered select-sm" required onchange="loadAddrBarangays()" disabled>
-                                <option value="">Select City/Municipality</option>
-                            </select>
-                        </div>
-
-                        <!-- Barangay -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Barangay</span>
-                            </label>
-                            <select name="addrBarangay" id="addrBarangay" class="select select-bordered select-sm" required onchange="updateAddress()" disabled>
-                                <option value="">Select Barangay</option>
-                            </select>
+                    <div class="form-control mb-2">
+                        <input type="text" name="address" id="completeAddress" placeholder="Enter complete address" class="input input-bordered input-sm flex-1" required />
+                    </div>
+                    <div class="form-control mb-2">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <!-- Region -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-sm">Region</span>
+                                </label>
+                                <select name="addrRegion" id="addrRegion" class="select select-bordered select-sm" required onchange="loadAddrProvinces()">
+                                    <option value="">Select Region</option>
+                                </select>
+                            </div>
+                            <!-- Province -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-sm">Province</span>
+                                </label>
+                                <select name="addrProvince" id="addrProvince" class="select select-bordered select-sm" required onchange="loadAddrCities()" disabled>
+                                    <option value="">Select Province</option>
+                                </select>
+                            </div>
+                            <!-- City/Municipality -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-sm">City/Municipality</span>
+                                </label>
+                                <select name="addrCity" id="addrCity" class="select select-bordered select-sm" required onchange="loadAddrBarangays()" disabled>
+                                    <option value="">Select City/Municipality</option>
+                                </select>
+                            </div>
+                            <!-- Barangay -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text text-sm">Barangay</span>
+                                </label>
+                                <select name="addrBarangay" id="addrBarangay" class="select select-bordered select-sm" required onchange="updateAddress()" disabled>
+                                    <option value="">Select Barangay</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- House/Street Number and Purok -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">House/Street No.</span>
-                            </label>
-                            <input type="text" name="addrStreet" id="addrStreet" placeholder="e.g., 123 Rizal Street" class="input input-bordered input-sm" onchange="updateAddress()" />
-                        </div>
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text text-sm">Purok/Sitio/Subdivision</span>
-                            </label>
-                            <input type="text" name="addrPurok" id="addrPurok" placeholder="e.g., Purok 5 or Villa Rosa Subd." class="input input-bordered input-sm" onchange="updateAddress()" />
-                        </div>
-                    </div>
-
-                    <!-- Hidden field to store combined address -->
-                    <input type="hidden" name="address" id="completeAddress" />
                 </div>
 
                 <!-- Contact Number -->
@@ -378,7 +335,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </svg>
                     Guardian Information
                 </h3>
-
                 <!-- Guardian Full Name -->
                 <div class="form-control mb-6">
                     <label class="label">
@@ -386,7 +342,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </label>
                     <input type="text" name="guardianName" placeholder="Full name" class="input input-bordered" required />
                 </div>
-
                 <!-- Guardian Contact Number -->
                 <div class="form-control mb-6">
                     <label class="label">
@@ -394,13 +349,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </label>
                     <input type="tel" name="guardianPhone" placeholder="+63-9175551234" class="input input-bordered" required />
                 </div>
-
+                <!-- Guardian Address Details -->
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Guardian Complete Address</span>
+                    </label>
+                    <div class="flex flex-row gap-2 items-center">
+                        <input type="text" name="guardianAddress" id="guardianAddress" placeholder="Enter guardian's address" class="input input-bordered flex-1" />
+                        <button type="button" class="btn btn-sm btn-outline" id="sameAsStudentAddressBtn">Same address as Student?</button>
+                    </div>
+                </div>
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Guardian City/Municipality</span>
+                    </label>
+                    <select name="guardianCity" id="guardianCity" class="select select-bordered" required>
+                        <option value="">Select City/Municipality</option>
+                    </select>
+                </div>
+                <!-- Guardian Religion -->
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Guardian Religion</span>
+                    </label>
+                    <select name="guardianReligion" id="guardianReligion" class="select select-bordered" required>
+                        <option value="">Select religion</option>
+                        <option value="Roman Catholic">Roman Catholic</option>
+                        <option value="Iglesia ni Cristo">Iglesia ni Cristo</option>
+                        <option value="Islam">Islam</option>
+                        <option value="Protestant">Protestant</option>
+                        <option value="Evangelical">Evangelical</option>
+                        <option value="Baptist">Baptist</option>
+                        <option value="Seventh-day Adventist">Seventh-day Adventist</option>
+                        <option value="Jehovah's Witnesses">Jehovah's Witnesses</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" name="guardianReligionOther" id="guardianReligionOther" class="input input-bordered mt-2 hidden" placeholder="If Other, please specify" />
+                </div>
                 <!-- Relationship -->
                 <div class="form-control mb-6">
                     <label class="label">
                         <span class="label-text font-semibold">Relationship</span>
                     </label>
-                    <select name="guardianRelationship" class="select select-bordered" required>
+                    <select name="guardianRelationship" id="guardianRelationship" class="select select-bordered" required>
                         <option value="">Select relationship</option>
                         <option value="Father">Father</option>
                         <option value="Mother">Mother</option>
@@ -408,6 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <option value="Sibling">Sibling</option>
                         <option value="Other">Other</option>
                     </select>
+                    <input type="text" name="guardianRelationshipOther" id="guardianRelationshipOther" class="input input-bordered mt-2 hidden" placeholder="If Other, please specify" />
                 </div>
             </div>
         </div>
@@ -447,6 +439,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <option value="Third Year">Third Year</option>
                         <option value="Fourth Year">Fourth Year</option>
                     </select>
+                </div>
+
+                <!-- Section Selection -->
+                <div class="form-control mb-6">
+                    <label class="label">
+                        <span class="label-text font-semibold">Section</span>
+                    </label>
+                    <select name="section" id="sectionSelect" class="select select-bordered" required>
+                        <option value="">Select section</option>
+                        <?php
+                        $sections = getAllSections();
+                        foreach ($sections as $section) {
+                            $count = getSectionStudentCount($section);
+                            if ($count < 30) {
+                                echo '<option value="' . htmlspecialchars($section) . '">' . htmlspecialchars($section) . ' ('. $count .'/30)</option>';
+                            }
+                        }
+                        ?>
+                    </select>
+                    <label class="label">
+                        <span class="label-text-alt text-gray-500">Only sections with less than 30 students are shown</span>
+                    </label>
                 </div>
 
                 <!-- Subjects Selection -->
@@ -677,6 +691,95 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </dialog>
 
 <script>
+    // --- Student City/Municipality Dropdown (Step 2) ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const studentCitySelect = document.getElementById('studentCity');
+        if (studentCitySelect) {
+            let allCities = [];
+            Object.values(philippineData.cities).forEach(arr => allCities = allCities.concat(arr));
+            allCities = allCities.filter((v, i, a) => a.findIndex(t => t.name === v.name) === i); // unique by name
+            allCities.sort((a, b) => a.name.localeCompare(b.name));
+            allCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.name;
+                option.textContent = city.name;
+                studentCitySelect.appendChild(option);
+            });
+        }
+    });
+    // --- Guardian Section Logic ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Populate Guardian City/Municipality dropdown (alphabetical, all cities)
+        const guardianCitySelect = document.getElementById('guardianCity');
+        if (guardianCitySelect) {
+            let allCities = [];
+            Object.values(philippineData.cities).forEach(arr => allCities = allCities.concat(arr));
+            allCities = allCities.filter((v, i, a) => a.findIndex(t => t.name === v.name) === i); // unique by name
+            allCities.sort((a, b) => a.name.localeCompare(b.name));
+            allCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.name;
+                option.textContent = city.name;
+                guardianCitySelect.appendChild(option);
+            });
+        }
+
+        // Guardian Religion: show textbox if 'Other' selected
+        const guardianReligion = document.getElementById('guardianReligion');
+        const guardianReligionOther = document.getElementById('guardianReligionOther');
+        if (guardianReligion && guardianReligionOther) {
+            guardianReligion.addEventListener('change', function() {
+                guardianReligionOther.classList.toggle('hidden', this.value !== 'Other');
+                if (this.value !== 'Other') guardianReligionOther.value = '';
+            });
+        }
+
+        // Student Religion: show textbox if 'Other' selected
+        const religion = document.getElementById('religion');
+        const religionOther = document.getElementById('religionOther');
+        if (religion && religionOther) {
+            religion.addEventListener('change', function() {
+                religionOther.classList.toggle('hidden', this.value !== 'Other');
+                if (this.value !== 'Other') religionOther.value = '';
+            });
+        }
+
+        // Guardian Relationship: show textbox if 'Other' selected
+        const guardianRelationship = document.getElementById('guardianRelationship');
+        const guardianRelationshipOther = document.getElementById('guardianRelationshipOther');
+        if (guardianRelationship && guardianRelationshipOther) {
+            guardianRelationship.addEventListener('change', function() {
+                guardianRelationshipOther.classList.toggle('hidden', this.value !== 'Other');
+                if (this.value !== 'Other') guardianRelationshipOther.value = '';
+            });
+        }
+
+        // Same address as student logic
+        const sameAsBtn = document.getElementById('sameAsStudentAddressBtn');
+        const studentAddress = document.getElementById('completeAddress');
+        const guardianAddress = document.getElementById('guardianAddress');
+        const studentCity = document.getElementById('addrCity');
+        const guardianCity = document.getElementById('guardianCity');
+        let sameMode = false;
+        if (sameAsBtn && studentAddress && guardianAddress && studentCity && guardianCity) {
+            sameAsBtn.addEventListener('click', function() {
+                sameMode = !sameMode;
+                if (sameMode) {
+                    guardianAddress.value = studentAddress.value;
+                    guardianAddress.setAttribute('readonly', 'readonly');
+                    guardianCity.value = studentCity.options[studentCity.selectedIndex]?.text || '';
+                    guardianCity.setAttribute('disabled', 'disabled');
+                    sameAsBtn.classList.add('btn-primary');
+                    sameAsBtn.textContent = 'Unlink address';
+                } else {
+                    guardianAddress.removeAttribute('readonly');
+                    guardianCity.removeAttribute('disabled');
+                    sameAsBtn.classList.remove('btn-primary');
+                    sameAsBtn.textContent = 'Same address as Student?';
+                }
+            });
+        }
+    });
     let currentStep = 1;
     const totalSteps = 4;
     let formData = {};
@@ -1938,15 +2041,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'APA': ['Balucuc', 'Calantipe', 'Cansinala', 'Capalangan', 'Colgante', 'Paligui', 'Sampaloc', 'San Juan', 'San Vicente', 'Sucad', 'Sulipan', 'Tabuyuc'],
             'ARA': ['Arenas', 'Baliti', 'Batasan', 'Buensuceso', 'Candating', 'Gatiawin', 'Guemasan', 'La Paz', 'Lacmit', 'Lacquios', 'Mangga-Cacutud', 'Mapalad', 'Palinlang', 'Paralaya', 'Plazang Luma', 'Poblacion', 'San Agustin Norte', 'San Agustin Sur', 'San Antonio', 'San Jose Mesulo', 'San Juan Bano', 'San Mateo', 'San Nicolas', 'San Roque Bitas', 'Santa Lucia', 'Santa Maria', 'Santo Niño Tabuan', 'Suclayin', 'Telapayong'],
             'BAC': ['Balas', 'Cabalantian', 'Cabambangan', 'Cabetican', 'Calibutbut', 'Concepcion', 'Duat', 'Macabacle', 'Magliman', 'Maliwalu', 'Mesalipit', 'Parulog', 'Potrero', 'San Antonio', 'San Isidro', 'San Vicente', 'Santa Barbara', 'Santa Ines', 'Talba', 'Tinajero'],
-            'CAN': ['Bahay Pare', 'Bambang', 'Barit', 'Buas', 'Cuayang Bugtong', 'Dalayap', 'Dulong Ilog', 'Gulap', 'Lanang', 'Lourdes', 'Magumbali', 'Mandasig', 'Mandili', 'Mangga', 'Mapaniqui', 'Paligui', 'Pangclara', 'Pansinao', 'Paralaya', 'Pasig', 'Pescadores', 'Pulong Gubat', 'Pulong Palazan', 'Salapungan', 'San Agustin', 'Santo Niño', 'Tagulod', 'Talang', 'Tenejero', 'Vizal San Pablo', 'Vizal Santo Cristo', 'Vizal Santo Niño'],
+            'CAN': ['Bahay Pare', 'Bambang', 'Barit', 'Buas', 'Cuayang Bugtong', 'Dalayap', 'Dulong Ilog', 'Gulap', 'Lanang', 'Lourdes', 'Magumbali', 'Mandasig', 'Mandili', 'Mangga', 'Mapaniqui', 'Paligui', 'Pandacaqui', 'Pangatlan', 'Paralaya', 'Pasig', 'Pescadores', 'Pulong Gubat', 'Pulong Palazan', 'Salapungan', 'San Agustin', 'Santo Niño', 'Tagulod', 'Talang', 'Tenejero', 'Vizal San Pablo', 'Vizal Santo Cristo', 'Vizal Santo Niño'],
             'FLO': ['Anon', 'Apalit', 'Basa Air Base', 'Benedicto', 'Bodega', 'Cabangcalan', 'Calantas', 'Carmencita', 'Consuelo', 'Dampe', 'Del Carmen', 'Fortuna', 'Gutad', 'Mabical', 'Malabo', 'Maligaya', 'Nabuclod', 'Pabanlag', 'Paguiruan', 'Palmayo', 'Pandaguirig', 'Poblacion', 'San Antonio', 'San Isidro', 'San Jose', 'San Nicolas', 'San Pedro', 'San Ramon', 'San Roque', 'Santa Monica', 'Solib', 'Valdez', 'Mawacat'],
-            'GUA': ['Ascomo', 'Bancal', 'Jose Abad Santos', 'Lambac', 'Maquiapo', 'Natividad', 'Plaza Burgos', 'Pulungmasle', 'Rizal', 'San Agustin', 'San Antonio', 'San Isidro', 'San Jose', 'San Juan Bautista', 'San Juan Nepomuceno', 'San Matias', 'San Miguel', 'San Nicolas', 'San Pablo', 'San Pedro', 'San Rafael', 'San Roque', 'San Vicente', 'Santa Filomena', 'Santa Ines', 'Santa Ursula', 'Santiago', 'Santo Cristo', 'Santo Niño', 'Santo Tomas'],
+            'GUA': ['Ascomo', 'Bancal', 'Jose Abad Santos', 'Lambac', 'Maquiapo', 'Natividad', 'Plaza Burgos', 'Pulungmasle', 'Rizal', 'San Agustin', 'San Antonio', 'San Isidro', 'San Juan', 'San Juan Bautista', 'San Juan Nepomuceno', 'San Matias', 'San Miguel', 'San Nicolas', 'San Pablo', 'San Pedro', 'San Rafael', 'San Roque', 'San Vicente', 'Santa Filomena', 'Santa Ines', 'Santa Ursula', 'Santiago', 'Santo Cristo', 'Santo Niño', 'Santo Tomas'],
             'LUB': ['Balantacan', 'Bancal Pugad', 'Bancal Sinubli', 'Baruya', 'Calangain', 'Concepcion', 'Del Carmen', 'De La Paz', 'Dolores', 'Lourdes', 'Prado Siongco', 'Remedios', 'San Agustin', 'San Antonio', 'San Francisco', 'San Isidro', 'San Jose Apunan', 'San Jose Gumi', 'San Juan', 'San Matias', 'San Miguel', 'San Nicolas', 'San Pablo', 'San Pedro Palcarangan', 'San Pedro Saug', 'San Rafael', 'San Roque Arbol', 'San Roque Dau', 'San Vicente', 'Santa Barbara', 'Santa Catalina', 'Santa Cruz', 'Santa Lucia', 'Santa Maria', 'Santa Monica', 'Santa Rita', 'Santa Teresa', 'Santiago', 'Santo Cristo', 'Santo Domingo', 'Santo Niño', 'Santo Tomas'],
             'MAG': ['Ayala', 'Balitucan', 'Camias', 'Dolores', 'Escaler', 'La Paz', 'Navaling', 'San Agustin', 'San Antonio', 'San Francisco', 'San Ildefonso', 'San Isidro', 'San Jose', 'San Miguel', 'San Nicolas I', 'San Nicolas II', 'San Pablo', 'San Pedro', 'San Roque', 'San Vicente', 'Santa Cruz', 'Santa Lucia', 'Santa Maria', 'Santo Niño', 'Santo Rosario', 'Turu'],
             'MAS': ['Alauli', 'Bagang', 'Balibago', 'Bebe Anac', 'Bebe Matua', 'Bulacus', 'Cambasi', 'Malauli', 'Nigui', 'Palimpe', 'Puti', 'Sagrada', 'San Isidro', 'San Nicolas', 'San Pedro', 'Santa Lucia', 'Santa Monica', 'Santo Niño', 'Sapang Kawayan', 'Sua'],
             'MEX': ['Acli', 'Anao', 'Balas', 'Bical', 'Buenavista', 'Camuning', 'Cawayan', 'Concepcion', 'Culubasa', 'Divisoria', 'Dolores', 'Eden', 'Gandus', 'Lagundi', 'Laput', 'Laug', 'Masamat', 'Masangsang', 'Nueva Victoria', 'Pandacaqui', 'Pangatlan', 'Panipuan', 'Parian', 'Sabanilla', 'San Antonio', 'San Carlos', 'San Jose Malino', 'San Jose Matulid', 'San Juan', 'San Lorenzo', 'San Miguel', 'San Nicolas', 'San Pablo', 'San Patricio', 'San Rafael', 'San Roque', 'San Vicente', 'Santa Cruz', 'Santa Maria', 'Santo Domingo', 'Santo Rosario', 'Sapang Maisac', 'Suclaban', 'Tangle'],
             'MIN': ['Bulac', 'Dawe', 'Lourdes', 'Maniango', 'San Francisco I', 'San Francisco II', 'San Isidro', 'San Nicolas', 'Santa Catalina', 'Santa Maria', 'Santa Rita', 'Santo Domingo', 'Santo Rosario', 'Sapang Maragul'],
-            'POC': ['Anunas', 'Balubad', 'Banbad', 'Camias', 'Cangatba', 'Diaz', 'Dolores', 'Hacienda Dolores', 'Jalung', 'Mancatian', 'Manibaug Libutad', 'Manibaug Paralaya', 'Manibaug Pasig', 'Manuali', 'Mitla Proper', 'Palat', 'Pias', 'Pio', 'Planas', 'Poblacion', 'Pulung Santol', 'Salu', 'San Jose Mitla', 'Santa Cruz', 'Sapang Bato', 'Sapang Uwak', 'Sepung Bulaun', 'Villa Maria'],
+            'POC': ['Anunas', 'Balubad', 'Banbad', 'Camias', 'Cangatba', 'Diaz', 'Dolores', 'Hagdang Bato Itaas', 'Hagdang Bato Libis', 'Harapin Ang Bukas', 'Highway Hills', 'Hulo', 'Mabini-J. Rizal', 'Malamig', 'Mauway', 'Namayan', 'New Zañiga', 'Old Zañiga', 'Pag-asa', 'Plainview', 'Pleasant Hills', 'Poblacion', 'San Jose', 'Vergara', 'Wack-Wack Greenhills'],
             'SAG': ['San Agustin', 'San Carlos', 'San Isidro', 'San Jose', 'San Juan', 'San Nicolas', 'San Roque', 'San Sebastian', 'Santa Catalina', 'Santa Cruz Pambilog', 'Santa Cruz Poblacion', 'Santa Lucia', 'Santa Monica', 'Santa Rita', 'Santo Niño', 'Santo Rosario', 'Santo Tomas'],
             'SAN': ['Concepcion', 'De La Paz', 'San Agustin', 'San Isidro', 'San Jose', 'San Juan', 'San Miguel', 'San Nicolas', 'San Pablo Libutad', 'San Pablo Proper', 'San Pedro', 'Santa Cruz', 'Santa Monica', 'Santo Niño'],
             'SAS': ['San Agustin', 'San Bartolome', 'San Isidro', 'San Joaquin', 'San Jose', 'San Juan', 'San Nicolas', 'San Pablo', 'San Pedro', 'San Roque', 'Santa Lucia', 'Santa Maria', 'Santo Rosario'],
@@ -1976,7 +2079,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             // Davao City Barangays
             'DAV': ['Acacia', 'Agdao', 'Alambre', 'Alejandra Navarro', 'Alfonso Angliongto Sr.', 'Angalan', 'Atan-Awe', 'Baganihan', 'Bago Aplaya', 'Bago Gallera', 'Bago Oshiro', 'Baguio District', 'Balengaeng', 'Baliok', 'Bangkas Heights', 'Bantol', 'Baracatan', 'Bato', 'Bayabas', 'Biao Escuela', 'Biao Guianga', 'Biao Joaquin', 'Binugao', 'Bucana', 'Buda', 'Buhangin Proper', 'Bunawan Proper', 'Cabantian', 'Cadalian', 'Calinan Proper', 'Callawa', 'Camansi', 'Carmen', 'Catalunan Grande', 'Catalunan Pequeño', 'Catigan', 'Cawayan', 'Centro', 'Colosas', 'Communal', 'Crossing Bayabas', 'Dacudao', 'Dalag', 'Daliao', 'Daliaon Plantation', 'Datu Salumay', 'Dominga', 'Dumoy', 'Eden', 'Fatima', 'Gatungan', 'Gov. Paciano Bangoy', 'Gov. Vicente Duterte', 'Gumalang', 'Gumitan', 'Ilang', 'Indangan', 'Kap. Tomas Monteverde Sr.', 'Kilate', 'Lacson', 'Lamanan', 'Lampianao', 'Langub', 'Lapu-Lapu', 'Leon Garcia Sr.', 'Lizada', 'Los Amigos', 'Lubogan', 'Lumiad', 'Ma-a', 'Mabuhay', 'Magsaysay', 'Magtuod', 'Mahayag', 'Malabog', 'Malagos', 'Malamba', 'Manambulan', 'Mandug', 'Manuel Guianga', 'Mapula', 'Marapangi', 'Marilog Proper', 'Matina Aplaya', 'Matina Biao', 'Matina Crossing', 'Matina Pangi', 'Megkawayan', 'Mintal', 'Mudiang', 'Mulig', 'New Carmen', 'New Valencia', 'Pampanga', 'Panacan', 'Pangyan', 'Paquibato Proper', 'Paradise Embak', 'PNR', 'Poblacion District', 'Riverside', 'Salapawan', 'Salaysay', 'Saloy', 'San Antonio', 'San Isidro', 'Santo Niño', 'Sasa', 'Sibulan', 'Sirawan', 'Sirib', 'Suawan', 'Subasta', 'Sumimao', 'Tacunan', 'Tagakpan', 'Tagluno', 'Tagurano', 'Talandang', 'Talomo Proper', 'Talomo River', 'Tamayong', 'Tamugan', 'Tapak', 'Tawan-tawan', 'Tibuloy', 'Tibungco', 'Tigatto', 'Toril Proper', 'Tugbok Proper', 'Tungakalan', 'Ubalde', 'Ula', 'Vicente Hizon Sr.', 'Waan', 'Wines'],
             // Default fallback
-            'default': ['Poblacion', 'Centro', 'Barangay 1', 'Barangay 2', 'Barangay 3', 'Barangay 4', 'Barangay 5']
+            'default': ['Poblacion', 'Centro', 'Barangay 1', 'Barangay 2', 'Barangay 3', 'Barangay 4', 'Barangay 5', 'Barangay 6', 'Barangay 7', 'Barangay 8', 'Barangay 9', 'Barangay 10', 'Barangay 11', 'Barangay 12', 'Barangay 13', 'Barangay 14', 'Barangay 15', 'Barangay 16', 'Barangay 17', 'Barangay 18', 'Barangay 19', 'Barangay 20', 'Barangay 21', 'Barangay 22', 'Barangay 23', 'Barangay 24', 'Barangay 25', 'Barangay 26', 'Barangay 27', 'Barangay 28', 'Barangay 29', 'Barangay 30', 'Barangay 31', 'Barangay 32', 'Barangay 33', 'Barangay 34', 'Barangay 35', 'Barangay 36', 'Barangay 37', 'Barangay 38', 'Barangay 39', 'Barangay 40', 'Barangay 41', 'Barangay 42', 'Barangay 43', 'Barangay 44', 'Barangay 45', 'Barangay 46', 'Barangay 47', 'Barangay 48', 'Barangay 49', 'Barangay 50', 'Barangay 51', 'Barangay 52', 'Barangay 53', 'Barangay 54', 'Barangay 55', 'Barangay 56', 'Barangay 57', 'Barangay 58', 'Barangay 59', 'Barangay 60', 'Barangay 61', 'Barangay 62', 'Barangay 63', 'Barangay 64', 'Barangay 65', 'Barangay 66', 'Barangay 67', 'Barangay 68', 'Barangay 69', 'Barangay 70', 'Barangay 71', 'Barangay 72', 'Barangay 73', 'Barangay 74', 'Barangay 75', 'Barangay 76'],
         }
     };
 
@@ -2052,7 +2155,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         barangaySelect.disabled = true;
         
         if (provinceCode && philippineData.cities[provinceCode]) {
-            philippineData.cities[provinceCode].forEach(city => {
+            // Sort cities alphabetically by name
+            const sortedCities = [...philippineData.cities[provinceCode]].sort((a, b) => a.name.localeCompare(b.name));
+            sortedCities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city.code;
                 option.textContent = city.name;
@@ -2169,7 +2274,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         barangaySelect.disabled = true;
         
         if (provinceCode && philippineData.cities[provinceCode]) {
-            philippineData.cities[provinceCode].forEach(city => {
+            // Sort cities alphabetically by name
+            const sortedCities = [...philippineData.cities[provinceCode]].sort((a, b) => a.name.localeCompare(b.name));
+            sortedCities.forEach(city => {
                 const option = document.createElement('option');
                 option.value = city.code;
                 option.textContent = city.name;
@@ -2234,6 +2341,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Add event listener to barangay for final update
         barangay.addEventListener('change', function() {
             updatePlaceOfBirth();
+        });
+    }
+
+    const copyBtn = document.getElementById('copyGuardianAddressBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            const guardianAddr = document.getElementById('guardianAddress');
+            const studentAddr = document.getElementById('completeAddress');
+            if (guardianAddr && studentAddr) {
+                studentAddr.value = guardianAddr.value;
+                studentAddr.focus();
+            }
         });
     }
 </script>

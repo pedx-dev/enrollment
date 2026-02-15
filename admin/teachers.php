@@ -1,4 +1,68 @@
 <?php
+// API endpoint for AJAX requests
+if (isset($_GET['action']) || (isset($_POST['action']) && $_SERVER['REQUEST_METHOD'] === 'POST')) {
+    header('Content-Type: application/json');
+    $action = $_GET['action'] ?? $_POST['action'];
+    
+    switch ($action) {
+        case 'list':
+            $filters = [
+                'search' => $_GET['search'] ?? '',
+                'department' => $_GET['department'] ?? ''
+            ];
+            $teachers = getAllTeachers($filters);
+            echo json_encode(['success' => true, 'data' => $teachers]);
+            exit;
+            
+        case 'get':
+            $teacher = getTeacherById($_GET['id']);
+            if ($teacher) {
+                $courses = getCoursesByInstructor($_GET['id']);
+                echo json_encode(['success' => true, 'data' => $teacher, 'courses' => $courses]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Teacher not found']);
+            }
+            exit;
+            
+        case 'add_teacher':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = [
+                    'name' => $_POST['name'],
+                    'email' => $_POST['email'],
+                    'department' => $_POST['department'],
+                    'specialization' => $_POST['specialization'] ?? '',
+                    'phone' => $_POST['phone'] ?? '',
+                    'password' => $_POST['password'] ?? 'password123'
+                ];
+                $result = addTeacher($data);
+                echo json_encode(['success' => $result, 'message' => $result ? 'Teacher added successfully' : 'Failed to add teacher']);
+            }
+            exit;
+            
+        case 'update_teacher':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $id = $_POST['id'];
+                $data = [
+                    'name' => $_POST['name'],
+                    'email' => $_POST['email'],
+                    'department' => $_POST['department'],
+                    'specialization' => $_POST['specialization'] ?? '',
+                    'phone' => $_POST['phone'] ?? ''
+                ];
+                $result = updateTeacher($id, $data);
+                echo json_encode(['success' => $result, 'message' => $result ? 'Teacher updated successfully' : 'Failed to update teacher']);
+            }
+            exit;
+            
+        case 'delete_teacher':
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $result = deleteTeacher($_POST['id']);
+                echo json_encode(['success' => $result, 'message' => $result ? 'Teacher deleted successfully' : 'Failed to delete teacher']);
+            }
+            exit;
+    }
+}
+
 // Get teachers from database
 $teachers = getAllTeachers();
 ?>
@@ -13,7 +77,7 @@ $teachers = getAllTeachers();
                     <h2 class="card-title text-2xl font-bold text-gray-800">Teachers Directory</h2>
                     <p class="text-gray-600 text-sm mt-2">Faculty members and their courses</p>
                 </div>
-                <button class="btn btn-primary" id="addTeacherBtn" onclick="document.getElementById('teacherModal').showModal()">
+                <button class="btn btn-primary" id="addTeacherBtn" onclick="openAddTeacherModal()">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -92,6 +156,7 @@ $teachers = getAllTeachers();
                 <div class="card-actions gap-2">
                     <button class="btn btn-sm btn-outline flex-1" onclick="viewTeacher(<?php echo $teacher['id']; ?>)">View</button>
                     <button class="btn btn-sm btn-warning" onclick="editTeacher(<?php echo $teacher['id']; ?>)">Edit</button>
+                    <button class="btn btn-sm btn-error" onclick="deleteTeacher(<?php echo $teacher['id']; ?>)">Delete</button>
                 </div>
             </div>
         </div>
@@ -210,45 +275,229 @@ $teachers = getAllTeachers();
 </dialog>
 
 <script>
-    const teachersData = <?php echo json_encode($teachers); ?>;
+    let currentTeacherId = null;
+    let teachersData = <?php echo json_encode($teachers); ?>;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
+        document.getElementById('searchTeachers').addEventListener('keyup', debounce(filterTeachers, 300));
+        document.getElementById('departmentFilter').addEventListener('change', filterTeachers);
+        document.getElementById('editTeacherBtn').addEventListener('click', function() {
+            if (currentTeacherId) {
+                document.getElementById('teacherDetailModal').close();
+                openEditTeacherModal(currentTeacherId);
+            }
+        });
+        document.getElementById('deleteTeacherBtn').addEventListener('click', function() {
+            if (currentTeacherId) {
+                deleteTeacher(currentTeacherId);
+            }
+        });
+    });
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function openAddTeacherModal() {
+        currentTeacherId = null;
+        document.getElementById('teacherModalTitle').textContent = 'Add New Teacher';
+        document.getElementById('teacherForm').reset();
+        document.getElementById('teacherModal').showModal();
+    }
 
     function viewTeacher(teacherId) {
-        const teacher = teachersData.find(t => t.id == teacherId);
-        if (!teacher) return;
+        fetch(`?page=teachers&action=get&id=${teacherId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const teacher = data.data;
+                    currentTeacherId = teacher.id;
 
-        document.getElementById('detail-name').textContent = teacher.name;
-        document.getElementById('detail-email').textContent = teacher.email;
-        document.getElementById('detail-department').textContent = teacher.department || 'N/A';
-        document.getElementById('detail-specialization').textContent = teacher.specialization || 'N/A';
-        document.getElementById('detail-phone').textContent = teacher.phone || 'N/A';
+                    document.getElementById('detail-name').textContent = teacher.name;
+                    document.getElementById('detail-email').textContent = teacher.email;
+                    document.getElementById('detail-department').textContent = teacher.department || 'N/A';
+                    document.getElementById('detail-specialization').textContent = teacher.specialization || 'N/A';
+                    document.getElementById('detail-phone').textContent = teacher.phone || 'N/A';
 
-        document.getElementById('detail-courses').innerHTML = '<p class="text-gray-500 text-sm">Loading courses...</p>';
-        
-        document.getElementById('teacherDetailModal').showModal();
+                    // Populate courses
+                    const coursesDiv = document.getElementById('detail-courses');
+                    if (data.courses && data.courses.length > 0) {
+                        coursesDiv.innerHTML = data.courses.map(c => 
+                            `<div class="badge badge-outline mr-2 mb-2">${c.code} - ${c.name}</div>`
+                        ).join('');
+                    } else {
+                        coursesDiv.innerHTML = '<p class="text-gray-500 text-sm">No courses assigned</p>';
+                    }
+                    
+                    document.getElementById('teacherDetailModal').showModal();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to load teacher', 'error');
+                }
+            });
+    }
+
+    function openEditTeacherModal(teacherId) {
+        fetch(`?page=teachers&action=get&id=${teacherId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const teacher = data.data;
+                    currentTeacherId = teacher.id;
+                    
+                    document.getElementById('teacherModalTitle').textContent = 'Edit Teacher';
+                    document.getElementById('teacherName').value = teacher.name;
+                    document.getElementById('teacherEmail').value = teacher.email;
+                    document.getElementById('teacherDepartment').value = teacher.department || '';
+                    document.getElementById('teacherSpecialization').value = teacher.specialization || '';
+                    document.getElementById('teacherPhone').value = teacher.phone || '';
+                    
+                    document.getElementById('teacherModal').showModal();
+                } else {
+                    Swal.fire('Error', data.message || 'Failed to load teacher', 'error');
+                }
+            });
     }
 
     function editTeacher(teacherId) {
-        Swal.fire('Info', 'Edit functionality coming soon', 'info');
+        openEditTeacherModal(teacherId);
     }
 
-    // Search and filter functionality
-    document.getElementById('searchTeachers').addEventListener('keyup', filterTeachers);
-    document.getElementById('departmentFilter').addEventListener('change', filterTeachers);
+    function saveTeacher(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('action', currentTeacherId ? 'update_teacher' : 'add_teacher');
+        
+        if (currentTeacherId) {
+            formData.append('id', currentTeacherId);
+        }
+        
+        formData.append('name', document.getElementById('teacherName').value);
+        formData.append('email', document.getElementById('teacherEmail').value);
+        formData.append('department', document.getElementById('teacherDepartment').value);
+        formData.append('specialization', document.getElementById('teacherSpecialization').value);
+        formData.append('phone', document.getElementById('teacherPhone').value);
+        
+        fetch('?page=teachers', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire('Success', data.message, 'success').then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Error', data.message || 'Operation failed', 'error');
+            }
+        })
+        .catch(error => {
+            Swal.fire('Error', 'An error occurred', 'error');
+        });
+    }
+
+    function deleteTeacher(teacherId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This will permanently delete this teacher!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('action', 'delete_teacher');
+                formData.append('id', teacherId);
+                
+                fetch('?page=teachers', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire('Deleted!', data.message, 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'Failed to delete teacher', 'error');
+                    }
+                });
+            }
+        });
+    }
 
     function filterTeachers() {
-        const searchQuery = document.getElementById('searchTeachers').value.toLowerCase();
-        const departmentFilter = document.getElementById('departmentFilter').value;
+        const search = document.getElementById('searchTeachers').value;
+        const department = document.getElementById('departmentFilter').value;
+        
+        fetch(`?page=teachers&action=list&search=${encodeURIComponent(search)}&department=${encodeURIComponent(department)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    teachersData = data.data;
+                    renderTeachers();
+                }
+            });
+    }
 
-        const cards = document.querySelectorAll('#teachersGrid > div');
-        cards.forEach(card => {
-            const name = card.querySelector('h2')?.textContent.toLowerCase() || '';
-            const email = card.querySelector('a[href^="mailto:"]')?.textContent.toLowerCase() || '';
-            const department = card.querySelector('.text-gray-600')?.textContent || '';
+    function renderTeachers() {
+        const grid = document.getElementById('teachersGrid');
+        
+        if (teachersData.length === 0) {
+            grid.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">No teachers found</div>';
+            return;
+        }
+        
+        grid.innerHTML = teachersData.map(teacher => `
+            <div class="card bg-white shadow-md hover:shadow-lg transition cursor-pointer">
+                <div class="card-body">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-bold">
+                            ${teacher.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h2 class="card-title text-lg text-gray-800">${teacher.name}</h2>
+                            <p class="text-sm text-gray-600">${teacher.department || 'N/A'}</p>
+                        </div>
+                    </div>
 
-            const matchesSearch = !searchQuery || name.includes(searchQuery) || email.includes(searchQuery);
-            const matchesDepartment = !departmentFilter || department === departmentFilter;
+                    <div class="space-y-2 text-sm mb-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <a href="mailto:${teacher.email}" class="link link-primary">${teacher.email}</a>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            <span>${teacher.phone || 'N/A'}</span>
+                        </div>
+                    </div>
 
-            card.style.display = (matchesSearch && matchesDepartment) ? '' : 'none';
-        });
+                    <div class="badge badge-outline mb-4">${teacher.specialization || 'General'}</div>
+
+                    <div class="card-actions gap-2">
+                        <button class="btn btn-sm btn-outline flex-1" onclick="viewTeacher(${teacher.id})">View</button>
+                        <button class="btn btn-sm btn-warning" onclick="editTeacher(${teacher.id})">Edit</button>
+                        <button class="btn btn-sm btn-error" onclick="deleteTeacher(${teacher.id})">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
     }
 </script>
